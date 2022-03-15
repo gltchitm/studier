@@ -1,0 +1,34 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:14.2-bullseye
+    restart: always
+    environment:
+      POSTGRES_DB: studier
+      POSTGRES_USER: studier
+      POSTGRES_PASSWORD: studier
+  studier_server:
+    build: ./src/server
+    depends_on:
+      - postgres
+    restart: always
+    environment:
+      GIN_MODE: release
+    volumes:
+      - ./src/server/db/migrations:/studier/server/migrations
+      - ./config/config.json:/studier/server/config.json
+  studier_client:
+    build: ./src/client
+    restart: always
+  nginx:
+    image: nginx:1.21.6
+    depends_on:
+      - studier_server
+      - studier_client
+    restart: always
+    ports:
+      - 443:443
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/server.crt:/studier/cert/server.crt
+      - ./config/server.key:/studier/cert/server.key
